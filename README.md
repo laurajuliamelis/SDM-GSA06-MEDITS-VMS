@@ -1,5 +1,3 @@
-![map](https://raw.githubusercontent.com/laurajuliamelis/SDM-GSA06-MEDITS-VMS/main/Figuras/Mapa_GSA06_ZEPA.jpg)
-
 # SDM-GSA06-MEDITS-VMS: Código y datos del Proyecto SteLar-DELTA
 
 ## Información general 
@@ -24,6 +22,8 @@ Contiene las predicciones en formato .fit de probabilidad de ocurrencia y de bio
 ### [**R.**](R)
 
 Script de R
+
+Los documentos `gadm36_ESP_0_sp.rds` y `gadm36_FRA_0_sp.rds` contienen los polígonos de España y Francia, respectivamente. Estos se han obenido mediante la función <code>&lt;getData()&gt;</code> del paquete <code>&lt;raster&gt;</code> (version 3.6-14).
 
 ### [**Shapefiles GSA-ZEPA.**](Shapefiles%20GSA-ZEPA)
 
