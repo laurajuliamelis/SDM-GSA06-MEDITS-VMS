@@ -11,4 +11,23 @@ authors:
     family-names: Julià
     email: lauraj@icm.csic.es
     affiliation: Institut de Ciències del Mar (ICM-CSIC)
-    orcid: 'https://orcid.org/0000-0001-5161-2267'
+  - given-names: Maria
+    family-names: Grazia Pennino
+    affiliation: Instituto Español de Oceanografía (IEO-CSIC)
+    email: graziapennino@yahoo.it
+  - given-names: Juan
+    family-names: Bécares
+    affiliation: CORY's - Investigación y Conservación de la Biodiversidad
+    email: jbecares@corys.es
+  - given-names: Marcel
+    family-names: Gil
+    email: mgilvelasco@corys.es
+    affiliation: CORY's - Investigación y Conservación de la Biodiversidad
+  - given-names: Marta
+    family-names: Coll
+    affiliation: Institut de Ciències del Mar (ICM-CSIC)
+    email: mcoll@icm.csic.es
+  - given-names: Francisco
+    family-names: Ramírez
+    email: ramirez@icm.csic.es
+    affiliation: Institut de Ciències del Mar (ICM-CSIC)
