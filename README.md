@@ -5,6 +5,7 @@ Este repositorio contiene el *script* de R y los resultados del análisis espaci
 
 Se ha evaluado la distribución espacial en términos de biomasa y probabilidad de ocurrencia de las tres principales especies de pequeños peces pelágicos (anchoa, sardina y alacha) en la plataforma continental ibérica dentro de la sub-área geográfica (GSA) 06, y particularmente dentro de la Zona de Especial Protección para las Aves (ZEPA) ES0000512.
 
+Para hacer estas estimas combinamos dos bases de datos independientes (procedentes de campañas oceanográficas MEDITS y datos de capturas reportados en los diarios de pesca de buques arrastreros) con información ambiental dentro de avanzados modelos de distribución de especies (BRT-RAC).
 
 ## Contenido
 
