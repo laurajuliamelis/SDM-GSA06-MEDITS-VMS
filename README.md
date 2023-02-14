@@ -23,7 +23,7 @@ Contiene las predicciones en formato .fit de probabilidad de ocurrencia y de bio
 
 Script de R
 
-- [**Shapefiles GSA-ZEPA.**]("Shapefiles GSA-ZEPA")
+- [**Shapefiles GSA-ZEPA.**](Shapefiles%20GSA-ZEPA)
 
 Archivos en formato simple con las áreas (i.e. polígonos) de la sub-área geográfica (GSA) 06 y la Zona de Especial Protección para las Aves del Delta del Ebro (ZEPA ES0000512).
 
