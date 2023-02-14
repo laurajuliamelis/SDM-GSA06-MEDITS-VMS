@@ -21,9 +21,9 @@ Contiene las predicciones en formato .fit de probabilidad de ocurrencia y de bio
 
 ### [**R.**](R)
 
-Script de R
+El archivo `BRT-RAC_Hurdle-Models.R` contiene el código utilizado para ajustar modelos BRT-RAC (*Boosted Regression Trees - Residual Autocovariate*) con el método delta log-normal o *hurdle model*.
 
-Los documentos `gadm36_ESP_0_sp.rds` y `gadm36_FRA_0_sp.rds` contienen los polígonos de España y Francia, respectivamente. Estos se han obenido mediante la función <code>&lt;getData()&gt;</code> del paquete <code>&lt;raster&gt;</code> (version 3.6-14).
+Los documentos `gadm36_ESP_0_sp.rds` y `gadm36_FRA_0_sp.rds` contienen los polígonos de España y Francia, respectivamente. Estos se han obenido mediante la función `getData()` del paquete <code>&lt;raster&gt;</code> (version 3.6-14).
 
 ### [**Shapefiles GSA-ZEPA.**](Shapefiles%20GSA-ZEPA)
 
