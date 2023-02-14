@@ -1,6 +1,6 @@
 # SDM-GSA06-MEDITS-VMS
 
-![alt text](https://github.com/laurajuliamelis/SDM-GSA06-MEDITS-VMS/Figuras/Mapa_GSA06_ZEPA.jpg?raw=true)
+![alt text](https://github.com/laurajuliamelis/SDM-GSA06-MEDITS-VMS/blob/Figuras/Mapa_GSA06_ZEPA.jpg?raw=true)
 
 ## Información general 
 
