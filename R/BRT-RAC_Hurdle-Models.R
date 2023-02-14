@@ -1,10 +1,16 @@
 
-## SPECIES DISTRIBUTION OF ANCHOVY, SARDINE & SARDINELLE WITH DELTA LOG-NORMAL BRT MODEL. 
-## ====================================================================================
+## "Species distribution of anchovy, sardine & sardinella with delta log-normal BRT-RAC models" 
+## Laura Julià Melis (lauraj@icm.csic.es)
 
-#####################
-# 1. LOAD LIBRARIES #
-#####################
+
+#############
+# 1. SET UP #
+#############
+
+# 1.1. Set working directory.
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path)) 
+
+# 1.2. Load necessary libraries.
 library(dismo)
 library(raster)
 library(ggplot2)
@@ -16,35 +22,60 @@ library(sf)
 library(spdep)
 library(maptools)
 library(ggridges)
+library(colorspace)
 
 
-####################
-# 2. READ DATASETS #
-####################
-setwd("C:/Users/Usuario/Desktop/ICM/FEINA/Fran Ramírez/SteLar - Delta (Cory's)/MEDITS")
-load("dades/Anchovy_environment_MEDSEA.RData")
-load("dades/Sardina_environment_MEDSEA.RData")
+
+
+##########################################
+# 2. READ SPECIES AND ENVIRONMENTAL DATA #
+##########################################
+
+# If, MEDITS Data:
+# ----------------
+load("../data/Anchovy_environment_MEDSEA.RData")
+load("../data/Sardina_environment_MEDSEA.RData")
 sardine_env <- sar_env
 rm(list=setdiff(ls(), c("anc_env", "sardine_env", "depth", 
                         "npp_year", "sal_year","tem_year")))
-load("dades/Sardinella_environment_MEDSEA.RData")
+load("../data/Sardinella_environment_MEDSEA.RData")
 sardinella_env <- sar_env
 rm(list=setdiff(ls(), c("anc_env", "sardine_env", "sardinella_env", "depth",
                         "npp_year", "sal_year", "tem_year")))
 
 
-# 2.1. Als data frames amb les dades mostrals, només hi deixem les columnes necessàries.
+# 2.1. In the data frames with the sample data, we leave only the necessary columns
 sample_anchovy <- anc_env[, c(2,10,11,5:9)]
-sample_anchovy$Biomasa <- sample_anchovy$Biomasa/0.011 # Coeficient capturabilitat q= 0.011
+sample_anchovy$Biomasa <- sample_anchovy$Biomasa/0.011 # Catchability coefficient q= 0.011
+
 sample_sardine <- sardine_env[, c(2,10,11,5:9)]
-sample_sardine$Biomasa <- sample_sardine$Biomasa/0.016 # Coeficient capturabilitat q= 0.016
+sample_sardine$Biomasa <- sample_sardine$Biomasa/0.016 # Catchability coefficient q= 0.016
+
 sample_sardinella <- sardinella_env[, c(2,10,11,5:9)]
-sample_sardinella$Biomasa <- sample_sardinella$Biomasa/0.0135 # Coeficient capturabilitat q= (0.011+0.016)/2
+sample_sardinella$Biomasa <- sample_sardinella$Biomasa/0.0135 # Catchability coefficient q=(0.011+0.016)/2
 remove(list=c("anc_env", "sardine_env", "sardinella_env"))
 
 
-# 2.2. Eliminem mostres que estan fora de la GSA06.
-gsa <- readShapePoly("C:/Users/Usuario/Desktop/ICM/FEINA/Fran Ramírez/SteLar - Delta (Cory's)/gsa/GSAs_simplified.shp",
+# IF, VMS Data:
+# -------------
+load("../data/CORYs_environment_MEDSEA.RData")
+df_env_ <- df_env_[complete.cases(df_env_[6:9]),]
+rm(list=setdiff(ls(), c("df_env_", "depth","npp_year", "sal_year", "tem_year")))
+
+# 2.1. We separate data frame by species and leave only necessary variables.
+sample_anchovy <- df_env_[, c(2,10,11,3,6:9)]
+sample_sardine <- df_env_[, c(2,10,11,4,6:9)]
+sample_sardinella <- df_env_[, c(2,10,11,5,6:9)]
+colnames(sample_anchovy)[2:4] <- c("lon", "lat", "Biomasa")
+colnames(sample_sardine)[2:4] <- c("lon", "lat", "Biomasa")
+colnames(sample_sardinella)[2:4] <- c("lon", "lat", "Biomasa")
+rm("df_env_")
+
+
+# FROM HERE, IT IS THE SAME FOR BOTH MEDITS AND VMS: 
+# --------------------------------------------------
+# 2.2. We remove points that are outside the GSA06.
+gsa <- readShapePoly("../Shapefiles GSA-ZEPA/GSAs_simplified.shp",
                      proj4string=CRS("+init=epsg:4326"))
 gsa06 <- subset(gsa, gsa@data$SECT_COD %in% c("GSA06"))
 
@@ -78,47 +109,39 @@ remove(list=c("gsa", "sample_anchovy_gsa_sf", "sample_sardine_gsa_sf",
               "sample_sardinella_gsa_sf"))
 
 
-# 2.3. Creem columna de presencia/absència (1/0).
+# 2.3. We create a presence/absence column (1/0).
 sample_anchovy$presence <- ifelse(sample_anchovy$Biomasa == 0, 0, 1)
 sample_sardine$presence <- ifelse(sample_sardine$Biomasa == 0, 0, 1)
 sample_sardinella$presence <- ifelse(sample_sardinella$Biomasa == 0, 0, 1)
 
 
-# 2.4. Creem dataframes amb només valors positius.
+# 2.4. We create dataframes with only positive values to model the biomass.
 sample_anchovy_bio <- subset(sample_anchovy, presence ==1, select= -presence)
 sample_sardine_bio <- subset(sample_sardine, presence ==1, select= -presence)
 sample_sardinella_bio <- subset(sample_sardinella, presence ==1, select= -presence)
 
 
-# 2.5. Guardem les dades en un nou workspace.
-save.image(file = "dades/data.RData")
-load("C:/Users/Usuario/Desktop/ICM/FEINA/Fran Ramírez/SteLar - Delta (Cory's)/MEDITS/dades/data.RData")
+# 2.5. We can save the data in a new workspace.
+save.image(file = "data/data.RData")
+load("data/data.RData") # run to load the workspace
 
 
 
 
+###########################
+# 3. EXPLORATORY ANALYSIS # 
+###########################
 
-#########################
-# 3. ANÀLISI PRELIMINAR # 
-#########################
-
-# 3.1. Mapa de l'àrea d'estudi amb les ubicacions d'espècies.
+# 3.1. Map of the study area.
+## Load the SpatialPolygonsDataframe of Spain and France
 spain <- raster::getData('GADM',country="ESP",level=0)
 france <- getData('GADM',country="FRA",level=0)
-plot(spain, xlim=c(-1,4), ylim=c(37,42), axes=TRUE,col='lightgray')
-plot(france, add=TRUE,col='lightgray')
-points(sample_anchovy$lon, sample_anchovy$lat, pch=3, cex=0.5, col ="red")
-contour(depth, add=T, col="black")
-legend(5.5, 38, legend=c("Sample locations", "Depth"), 
-       col=c("red", "black"), lty=c(NA,1),pch=c(3,NA), cex=0.8, bty="n")
-box()
 
-
-
-# Gràfic informe:
-library(colorspace)
-zepa <-  readShapePoly("C:/Users/Usuario/Desktop/ICM/FEINA/Fran Ramírez/SteLar - Delta (Cory's)/MEDITS/gsa/ZEPA_Ebre_WGS84.shp",
+## Loas ZEPA shapefile
+zepa <-  readShapePoly("../Shapefiles GSA-ZEPA/ZEPA_Ebre_WGS84.shp",
                        proj4string=CRS("+init=epsg:4326"))
+
+## Create plot
 plot(spain, xlim=c(-1,4), ylim=c(37,42), axes=TRUE,col='lightgray')
 plot(gsa06, add=TRUE,col=alpha('olivedrab3',0.4))
 points(sample_anchovy$lon, sample_anchovy$lat, pch=19, cex=0.5, col ="red")
@@ -132,9 +155,9 @@ text(x=-1.7, y=37.7, labels= "Cabo de Palos", cex= 0.8, font=4)
 box()
 
 
-# 3.2. Distribució de les variables resposta.
+# 3.2. Response variable distribution.
 par(mfrow=c(3,3))
-### Densitat de la Biomassa per espècie -> ZERO-INFLATED
+## Biomass density by species.
 plot(density(sample_anchovy$Biomasa),
      main="Anchoa", xlab = "Biomasa (kg)", ylab= "Densidad")
 plot(density(sample_sardine$Biomasa), 
@@ -142,7 +165,7 @@ plot(density(sample_sardine$Biomasa),
 plot(density(sample_sardinella$Biomasa), 
      main="Alacha", xlab = "Biomasa (kg)", ylab= "Densidad")
 
-### Densitat de la Biomassa eliminant zeros -> LONG-TAILED DISTRIBUTIONS
+## Biomass density removing zeros.
 plot(density(sample_anchovy_bio$Biomasa), 
      main="Anchoa", xlab = "Biomasa positiva (kg)", ylab= "Densidad")
 plot(density(sample_sardine_bio$Biomasa), 
@@ -150,7 +173,7 @@ plot(density(sample_sardine_bio$Biomasa),
 plot(density(sample_sardinella_bio$Biomasa),
      main="Alacha", xlab = "Biomasa positiva (kg)", ylab= "Densidad")
 
-### Densitat de Biomassa log-transformada -> NORMAL DISTRIBUTION 
+## Biomass density log-transformed.
 plot(density(log(sample_anchovy_bio$Biomasa)), 
      main="Anchoa", xlab = "log(Biomasa)", ylab= "Densidad")
 plot(density(log(sample_sardine_bio$Biomasa)),
@@ -160,16 +183,16 @@ plot(density(log(sample_sardinella_bio$Biomasa)),
 par(mfrow=c(1,1))
 
 
-# 3.3. Tendències temporals de la biomassa log-transformada.
+# 3.3. Temporal trends of log-transformed biomass.
 
-## Biomassa mitjana per any
+## First the average biomass per year is calculated
 df1 <-aggregate(sample_anchovy$Biomasa, list(sample_anchovy$year), FUN=mean) 
 df2 <-aggregate(sample_sardine$Biomasa, list(sample_sardine$year), FUN=mean) 
 df3 <-aggregate(sample_sardinella$Biomasa, list(sample_sardinella$year), FUN=mean) 
 colnames(df1) <- colnames(df2) <- colnames(df3) <- c("Year", "Biomass")
 df1$Year <- df2$Year <- df3$Year <- 1998:2017
 
-## Plot per espècie
+## Then we create a plot per species.
 p1 <- ggplot(df1, aes(Year, Biomass)) + 
   geom_point() + geom_smooth() + theme_bw() +
   labs(subtitle= "Anchoa", y= "Biomasa (kg)", x = "Año", tag="A") + 
@@ -197,6 +220,106 @@ p3 <- ggplot(df3, aes(Year, Biomass)) +
 grid.arrange(p1, p2, p3, ncol=3)
 remove(list=c("p1", "p2", "p3", "df1", "df2", "df3"))
 
+# 3.4. Plots of the environmental variables.
+
+## First, cut rasters by GSA06.
+for (i in 1:length(sal_year)){
+  if(i == 1){
+    sal_year.gsa <- mask(sal_year[[i]], gsa06)
+    tem_year.gsa <- mask(tem_year[[i]], gsa06)
+    npp_year.gsa <- mask(npp_year[[i]], gsa06)
+    depth.gsa <- mask(depth, gsa06)
+    
+  } else{
+    sal_year.gsa <- stack(sal_year.gsa, mask(sal_year[[i]], gsa06))
+    tem_year.gsa <- stack(tem_year.gsa, mask(tem_year[[i]], gsa06))
+    npp_year.gsa <- stack(npp_year.gsa, mask(npp_year[[i]], gsa06))
+  }
+}
+
+## Then, plot.
+# ------------------------ depth ------------------------ #
+plot(depth.gsa, col=tim.colors(120)[1:120], axes=T, legend=T)
+plot(spain, col='dark grey',add=T)
+plot(france, col='dark grey',add=T)
+
+# ---------------------- salinity ----------------------- #
+zmin <- Inf
+zmax <- 0
+for(i in 1:nlayers(sal_year.gsa)){
+  aux.min <- min(values(sal_year.gsa[[i]]), na.rm = T)
+  aux.max <- max(values(sal_year.gsa[[i]]), na.rm = T)
+  
+  zmax <- ifelse(aux.max > zmax, aux.max, zmax)
+  zmin <- ifelse(aux.min < zmin, aux.min, zmin)
+}
+
+par(mfrow=c(5,5), mar = c(1,1,2,2.2))
+for(i in 1:nlayers(sal_year.gsa)){
+  if(i != nlayers(sal_year.gsa)){
+    plot(sal_year.gsa[[i]],zlim=c(zmin, zmax), col=tim.colors(25)[1:25], 
+         main= paste0("Año ", 1997+i), axes=F, legend=F)
+    plot(spain, col='dark grey',add=T)
+    plot(france, col='dark grey',add=T)
+  }else{
+    plot(sal_year.gsa[[i]],zlim=c(zmin, zmax), col=tim.colors(120)[1:120], 
+         main= paste0("Año ", 1997+i), axes=F, legend=TRUE)
+    plot(spain, col='dark grey',add=T)
+    plot(france, col='dark grey',add=T)
+  }
+}
+
+# --------------------- temperature --------------------- #
+zmin <- Inf
+zmax <- 0
+for(i in 1:nlayers(tem_year.gsa)){
+  aux.min <- min(values(tem_year.gsa[[i]]), na.rm = T)
+  aux.max <- max(values(tem_year.gsa[[i]]), na.rm = T)
+  
+  zmax <- ifelse(aux.max > zmax, aux.max, zmax)
+  zmin <- ifelse(aux.min < zmin, aux.min, zmin)
+}
+
+par(mfrow=c(5,5), mar = c(1,1,2,2.2))
+for(i in 1:nlayers(tem_year.gsa)){
+  if(i != nlayers(tem_year.gsa)){
+    plot(tem_year.gsa[[i]],zlim=c(zmin, zmax), col=tim.colors(25)[1:25], 
+         main= paste0("Año ", 1997+i), axes=F, legend=F)
+    plot(spain, col='dark grey',add=T)
+    plot(france, col='dark grey',add=T)
+  }else{
+    plot(tem_year.gsa[[i]],zlim=c(zmin, zmax), col=tim.colors(120)[1:120], 
+         main= paste0("Año ", 1997+i), axes=F, legend=TRUE)
+    plot(spain, col='dark grey',add=T)
+    plot(france, col='dark grey',add=T)
+  }
+}
+
+# ------------------------- npp ------------------------- #
+zmin <- Inf
+zmax <- 0
+for(i in 1:nlayers(npp_year.gsa)){
+  aux.min <- min(values(npp_year.gsa[[i]]), na.rm = T)
+  aux.max <- max(values(npp_year.gsa[[i]]), na.rm = T)
+  
+  zmax <- ifelse(aux.max > zmax, aux.max, zmax)
+  zmin <- ifelse(aux.min < zmin, aux.min, zmin)
+}
+
+par(mfrow=c(5,5), mar = c(1,1,2,2.2))
+for(i in 1:nlayers(npp_year.gsa)){
+  if(i != nlayers(npp_year.gsa)){
+    plot(npp_year.gsa[[i]],zlim=c(zmin, zmax), col=tim.colors(25)[1:25], 
+         main= paste0("Año ", 1997+i), axes=F, legend=F)
+    plot(spain, col='dark grey',add=T)
+    plot(france, col='dark grey',add=T)
+  }else{
+    plot(npp_year.gsa[[i]],zlim=c(zmin, zmax), col=tim.colors(120)[1:120], 
+         main= paste0("Año ", 1997+i), axes=F, legend=TRUE)
+    plot(spain, col='dark grey',add=T)
+    plot(france, col='dark grey',add=T)
+  }
+}
 
 
 
@@ -212,19 +335,16 @@ remove(list=c("p1", "p2", "p3", "df1", "df2", "df3"))
 # 4.1. Models for probability of ocurrence (Binomial BRT models). 
 # ===============================================================
 
-## 4.1.1. Models amb NOMÉS variables ambientals
+## 4.1.1. Models with ONLY environmental variables
 brt.ber.anx <- gbm.step(data= sample_anchovy, gbm.x = c(1,5:8), gbm.y = 9, 
-                        tree.complexity=1,
-                        family = "bernoulli",  learning.rate = 0.01, silent=T)
-brt.ber.sar <- gbm.step(data= sample_sardine, gbm.x = c(1,5:8), gbm.y = 9, 
-                        tree.complexity=1,
-                        family = "bernoulli",  learning.rate = 0.01, silent=T)
+                        family = "bernoulli", silent=T)
+brt.ber.sar <- gbm.step(data= sample_sardine, gbm.x = c(1,5:8), gbm.y = 9,
+                        family = "bernoulli", silent=T)
 brt.ber.sardinella <- gbm.step(data= sample_sardinella, gbm.x = c(1,5:8), 
-                               gbm.y = 9, tree.complexity=1,
-                               family = "bernoulli",  learning.rate = 0.01, silent=T)
+                               gbm.y = 9, family = "bernoulli", silent=T)
 
 
-## 4.1.2. Càlcul autocovariable a partir dels residus dels models anteriors.
+## 4.1.2. Autocovariate calculation from the residuals of the previous models.
 coords <- data.frame("lon" = sample_anchovy$lon, "lat" = sample_anchovy$lat)
 
 # ------------------------- anchovy ------------------------- #
@@ -233,10 +353,10 @@ rast <- raster(xmn = extent(depth)[1], xmx = extent(depth)[2],
                nrows = dim(depth)[1], ncols = dim(depth)[2]) 
 xy_residuals <- cbind(coords, resid(brt.ber.anx))
 rast[cellFromXY(rast, xy_residuals)] <- xy_residuals[,3]        
-spatial.ber.anx <- raster::focal(rast, w = matrix(1, nr= 9, nc=9), na.rm =T) # càlcul focal veïns d'ordre 1
-sample_anchovy$autocovariate <- extract(spatial.ber.anx, coords) # Afegim l'autocovariable a la bbdd
+spatial.ber.anx <- raster::focal(rast, w = matrix(1, nr= 9, nc=9), na.rm =T) # focal calculation neighbors of 1st order
+sample_anchovy$autocovariate <- extract(spatial.ber.anx, coords) # We add the autocovariate to the dataframe
 
-## IDW interpolation of the autocovariable:
+## IDW interpolation of the autocovariate:
 sf.data <- as(st_as_sf(sample_anchovy, coords = c("lon", "lat"),
                        crs= "+proj=longlat +datum=WGS84"), "Spatial")
 gs <- gstat::gstat(formula = autocovariate ~ 1, data = sf.data)
@@ -253,7 +373,7 @@ rast[cellFromXY(rast, xy_residuals)] <- xy_residuals[,3]
 spatial.ber.sar <- raster::focal(rast, w = matrix(1, nr= 9, nc=9), na.rm =T)
 sample_sardine$autocovariate <- extract(spatial.ber.sar, coords)
 
-## IDW interpolation of the autocovariable:
+## IDW interpolation of the autocovariate:
 sf.data <- as(st_as_sf(sample_sardine, coords = c("lon", "lat"), 
                        crs= "+proj=longlat +datum=WGS84"), "Spatial")
 gs <- gstat::gstat(formula = autocovariate ~ 1, data = sf.data)
@@ -270,7 +390,7 @@ rast[cellFromXY(rast, xy_residuals)] <- xy_residuals[,3]
 spatial.ber.sardinella <- raster::focal(rast, w = matrix(1, nr= 9, nc=9), na.rm =T)
 sample_sardinella$autocovariate <- extract(spatial.ber.sardinella, coords)
 
-## IDW interpolation of the autocovariable:
+## IDW interpolation of the autocovariate:
 sf.data <- as(st_as_sf(sample_sardinella, coords = c("lon", "lat"), 
                        crs= "+proj=longlat +datum=WGS84"), "Spatial")
 gs <- gstat::gstat(formula = autocovariate ~ 1, data = sf.data)
@@ -281,59 +401,55 @@ rm(list=c("coords", "rast", "xy_residuals", "sf.data", "gs", "idw",
           "brt.ber.anx", "brt.ber.sar", "brt.ber.sardinella"))
 
 
-## 4.1.3. Models amb les dades ambientals + l'autocovariable.
-brt.ber.anx <- gbm.step(data= sample_anchovy, gbm.x = c(1,5:8,10), gbm.y = 9, 
-                        tree.complexity=1,
-                        family = "bernoulli",  learning.rate = 0.01, silent=T)
-brt.ber.sar <- gbm.step(data= sample_sardine, gbm.x = c(1,5:8,10), gbm.y = 9, 
-                        tree.complexity=1,
-                        family = "bernoulli",  learning.rate = 0.01, silent=T)
+## 4.1.3. Models with the environmental data + the autocovariate.
+brt.ber.anx <- gbm.step(data= sample_anchovy, gbm.x = c(1,5:8,10), gbm.y = 9,
+                        family = "bernoulli", silent=T)
+brt.ber.sar <- gbm.step(data= sample_sardine, gbm.x = c(1,5:8,10), gbm.y = 9,
+                        family = "bernoulli", silent=T)
 brt.ber.sardinella <- gbm.step(data= sample_sardinella, gbm.x = c(1,5:8,10), 
-                               gbm.y = 9, tree.complexity=1,
-                               family = "bernoulli",  learning.rate = 0.01, silent=T)
+                               gbm.y = 9, family = "bernoulli", silent=T)
 
 
-## Guardem  resultats en un nou workspace.
-save.image(file = "analisiSDM.RData")
-load("C:/Users/Usuario/Desktop/ICM/FEINA/Fran Ramírez/SteLar - Delta (Cory's)/MEDITS/analisiSDM.RData")
-
-
-## 4.1.4. Deviancia explicada pel model (avaluació rendiment dels models)
+## 4.1.4. Deviance explained by the model (performance evaluation of the models)
 devexpl.ber.anx <- ((brt.ber.anx$self.statistics$null-brt.ber.anx$self.statistics$resid)/brt.ber.anx$self.statistics$null)*100
 devexpl.ber.sar <- ((brt.ber.sar$self.statistics$null-brt.ber.sar$self.statistics$resid)/brt.ber.sar$self.statistics$null)*100
 devexpl.ber.sardinella <- ((brt.ber.sardinella$self.statistics$null-brt.ber.sardinella$self.statistics$resid)/brt.ber.sardinella$self.statistics$null)*100
-devexpl.ber.anx; devexpl.ber.sar; devexpl.ber.sardinella # [1] 48.03489  [1] 49.99753  [1] 37.43483
+devexpl.ber.anx; devexpl.ber.sar; devexpl.ber.sardinella
 
 
-## 4.1.5. Variables més influents en cada model.
+## 4.1.5. Most influential variables in each model.
 brt.ber.anx$contributions
 brt.ber.sar$contributions
 brt.ber.sardinella$contributions
 
+
+## 4.1.6. We save results in a new workspace.
+dir.create("./outputs") # it creates a folder for output files in our current directory
+save.image(file = "results.RData")
+load("outputs/results.RData")# run to load the workspace
+
+
+
 # 4.2. Models for the non-zero log(biomass) observations (Gaussian BRT models).
 # =============================================================================
 
-## 4.2.1. Log-transformem les biomasses. 
+## 4.2.1. We log-transform the biomasses.
 sample_anchovy_bio$logbio <- log(sample_anchovy_bio$Biomasa)
 sample_sardine_bio$logbio <- log(sample_sardine_bio$Biomasa)
 sample_sardinella_bio$logbio <- log(sample_sardinella_bio$Biomasa)
 
 
-
-## 4.2.2. Models amb NOMÉS variables ambientals
-brt.gau.anx <- gbm.step(data= sample_anchovy_bio, gbm.x = c(1,5:8), gbm.y = 9, 
-                        tree.complexity=1,
-                        family = "gaussian",  learning.rate = 0.01, silent=T)
-brt.gau.sar <- gbm.step(data= sample_sardine_bio, gbm.x = c(1,5:8), gbm.y = 9, 
-                        tree.complexity=1,
-                        family = "gaussian",  learning.rate = 0.01, silent=T)
+## 4.2.2.  Models with ONLY environmental variables.
+brt.gau.anx <- gbm.step(data= sample_anchovy_bio, gbm.x = c(1,5:8), gbm.y = 9,
+                        family = "gaussian", silent=T)
+brt.gau.sar <- gbm.step(data= sample_sardine_bio, gbm.x = c(1,5:8), gbm.y = 9,
+                        family = "gaussian", silent=T)
 brt.gau.sardinella <- gbm.step(data= sample_sardinella_bio, gbm.x = c(1,5:8), 
-                               gbm.y = 9, tree.complexity=1,
-                               family = "gaussian",  learning.rate = 0.005)
+                               gbm.y = 9, family = "gaussian")
 
 
 
-## 4.2.3. Càlcul autocovariable a partir dels residus dels models anteriors.
+## 4.2.3. Autocovariate calculation from the residuals of the previous models.
 
 # ------------------------- anchovy ------------------------- #
 coords <- data.frame("lon" = sample_anchovy_bio$lon, "lat" = sample_anchovy_bio$lat)
@@ -342,10 +458,10 @@ rast <- raster(xmn = extent(depth)[1], xmx = extent(depth)[2],
                nrows = dim(depth)[1], ncols = dim(depth)[2]) 
 xy_residuals <- cbind(coords, resid(brt.gau.anx))
 rast[cellFromXY(rast, xy_residuals)] <- xy_residuals[,3]        
-spatial.gau.anx <- raster::focal(rast, w = matrix(1, nr= 9, nc=9), na.rm =T) # càlcul focal veïns d'ordre 1
-sample_anchovy_bio$autocovariate <- extract(spatial.gau.anx, coords) # Afegim l'autocovariable a la bbdd
+spatial.gau.anx <- raster::focal(rast, w = matrix(1, nr= 9, nc=9), na.rm =T) # focal calculation neighbors of 1st order
+sample_anchovy_bio$autocovariate <- extract(spatial.gau.anx, coords) # We add the autocovariate to the dataframe
 
-## IDW interpolation of the autocovariable:
+## IDW interpolation of the autocovariate:
 sf.data <- as(st_as_sf(sample_anchovy_bio, coords = c("lon", "lat"), 
                        crs= "+proj=longlat +datum=WGS84"), "Spatial")
 gs <- gstat::gstat(formula = autocovariate ~ 1, data = sf.data)
@@ -363,7 +479,7 @@ rast[cellFromXY(rast, xy_residuals)] <- xy_residuals[,3]
 spatial.gau.sar <- raster::focal(rast, w = matrix(1, nr= 9, nc=9), na.rm =T)
 sample_sardine_bio$autocovariate <- extract(spatial.gau.sar, coords)
 
-## IDW interpolation of the autocovariable:
+## IDW interpolation of the autocovariate:
 sf.data <- as(st_as_sf(sample_sardine_bio, coords = c("lon", "lat"), 
                        crs= "+proj=longlat +datum=WGS84"), "Spatial")
 gs <- gstat::gstat(formula = autocovariate ~ 1, data = sf.data)
@@ -382,48 +498,39 @@ rast[cellFromXY(rast, xy_residuals)] <- xy_residuals[,3]
 spatial.gau.sardinella <- raster::focal(rast, w = matrix(1, nr= 9, nc=9), na.rm =T)
 sample_sardinella_bio$autocovariate <- extract(spatial.gau.sardinella, coords)
 
-## IDW interpolation of the autocovariable:
+## IDW interpolation of the autocovariate:
 sf.data <- as(st_as_sf(sample_sardinella_bio, coords = c("lon", "lat"),
                        crs= "+proj=longlat +datum=WGS84"), "Spatial")
 gs <- gstat::gstat(formula = autocovariate ~ 1, data = sf.data)
 idw <- interpolate(spatial.gau.sardinella, gs)
 spatial.gau.sardinella <- mask(idw, depth)
 
-
 rm(list=c("coords", "rast", "xy_residuals", "sf.data", "gs", "idw", 
           "brt.gau.anx", "brt.gau.sar", "brt.gau.sardinella"))
 
 
-## 4.2.4. Models amb les dades ambientals + l'autocovariable.
-brt.gau.anx <- gbm.step(data= sample_anchovy_bio, gbm.x = c(1,5:8,10), gbm.y = 9, 
-                        tree.complexity=1,
-                        family = "gaussian",  learning.rate = 0.01, silent=T)
+## 4.2.4. Models with the environmental data + the autocovariate.
+brt.gau.anx <- gbm.step(data= sample_anchovy_bio, gbm.x = c(1,5:8,10), gbm.y = 9,
+                        family = "gaussian", silent=T)
 brt.gau.sar <- gbm.step(data= sample_sardine_bio, gbm.x = c(1,5:8,10), gbm.y = 9,
-                        tree.complexity=1,
-                        family = "gaussian",  learning.rate = 0.01, silent=T)
+                        family = "gaussian", silent=T)
 brt.gau.sardinella <- gbm.step(data= sample_sardinella_bio, gbm.x = c(1,5:8,10),
-                               gbm.y = 9, tree.complexity=1,
-                               family = "gaussian",  learning.rate = 0.01, silent=T)
+                               gbm.y = 9, family = "gaussian", silent=T)
 
-
-
-## Guardem  resultats en un nou workspace.
-save.image(file = "analisiSDM.RData")
-load("C:/Users/Usuario/Desktop/ICM/FEINA/Fran Ramírez/SteLar - Delta (Cory's)/MEDITS/analisiSDM.RData")
-
-
-
-## 4.2.5. Deviancia explicada pel model (avaluació rendiment dels models)
+## 4.2.5. Deviance explained by the model (performance evaluation of the models)
 devexpl.gau.anx <- ((brt.gau.anx$self.statistics$null-brt.gau.anx$self.statistics$resid)/brt.gau.anx$self.statistics$null)*100
 devexpl.gau.sar <- ((brt.gau.sar$self.statistics$null-brt.gau.sar$self.statistics$resid)/brt.gau.sar$self.statistics$null)*100
 devexpl.gau.sardinella <- ((brt.gau.sardinella$self.statistics$null-brt.gau.sardinella$self.statistics$resid)/brt.gau.sardinella$self.statistics$null)*100
-devexpl.gau.anx; devexpl.gau.sar; devexpl.gau.sardinella # [1] 35.34596 [1] 28.51435 [1] 43.61798
+devexpl.gau.anx; devexpl.gau.sar; devexpl.gau.sardinella 
 
 
-## 4.2.6. Variables més influents en cada model.
+## 4.2.6. Most influential variables in each model.
 brt.gau.anx$contributions
 brt.gau.sar$contributions
 brt.gau.sardinella$contributions
+
+## 4.2.7. We save results in a the workspace.
+save.image(file = "results.RData")
 
 
 
@@ -431,8 +538,8 @@ brt.gau.sardinella$contributions
 # 5. PROVES AUTOCORRELACIÓ ESPACIAL #
 #####################################
 
-# 5.1. Models d'ocurrència.
-# =========================
+# 5.1. Occurrence models.
+# =======================
 coords <- as.matrix(cbind(sample_anchovy$lon, sample_anchovy$lat))
 nb <- dnearneigh(as.matrix(coords), 0, 20)
 listw <- nb2listw(nb)
@@ -447,11 +554,12 @@ MoranI.sardinella.ber <- moran.mc(residuals(brt.ber.sardinella),
 MoranI.anx.ber; MoranI.sar.ber; MoranI.sardinella.ber
 
 
-# 5.2. Models de biomassa.
-# ========================
+
+
+# 5.2. Biomass models.
+# ====================
 nsim <- 999
 set.seed(1234)
-
 
 coords <- as.matrix(cbind(sample_anchovy_bio$lon, sample_anchovy_bio$lat))
 nb <- dnearneigh(as.matrix(coords), 0, 20)
@@ -463,7 +571,6 @@ nb <- dnearneigh(as.matrix(coords), 0, 20)
 listw <- nb2listw(nb)
 MoranI.sar.gau  <- moran.mc(residuals(brt.gau.sar), listw=listw, nsim=nsim)
 
-
 coords <- as.matrix(cbind(sample_sardinella_bio$lon, sample_sardinella_bio$lat))
 nb <- dnearneigh(as.matrix(coords), 0, 20)
 listw <- nb2listw(nb)
@@ -472,17 +579,19 @@ MoranI.anx.gau ; MoranI.sar.gau ; MoranI.sardinella.gau
 
 remove(list=c("coords", "nb", "listw", "nsim"))
 
-## Guardem  resultats en un nou workspace.
-save.image(file = "analisiSDM.RData")
-load("C:/Users/Usuario/Desktop/ICM/FEINA/Fran Ramírez/SteLar - Delta (Cory's)/MEDITS/analisiSDM.RData")
+## Save workspace.
+save.image(file = "results.RData")
 
 
-##########################
-# 6. CÀLCUL PREDICCIONS # 
+
+
+
+#########################
+# 6. MAKING PREDICTIONS # 
 #########################
 
-# 6.1. Funció per a combinar prediccions ocurrència i biomassa.
-# =============================================================
+# 6.1. Function to combine occurrence and biomass predictions.
+# ============================================================
 
 pred <- function(model1, model2, spatial1, spatial2, depth){
   
@@ -528,17 +637,17 @@ pred <- function(model1, model2, spatial1, spatial2, depth){
 }
 
 
-# 6.2. Calculem prediccions per a cada espècie. 
-# =============================================
+# 6.2. We calculate predictions for each species.
+# ===============================================
 
-##  6.2.1. Primer retallem la batimetria a <= -850.
+##  6.2.1. First we trim the bathymetry to <= -850.
 matrix <- cbind(coordinates(depth), depth=raster::getValues(depth))
 matrix <- as.data.frame(matrix[!is.na(matrix[,3]),])
 matrix <- subset(matrix, matrix$depth  >= -850)
 depth2 <- rasterFromXYZ(matrix)
 rm(matrix)
 
-##  6.2.2. Prediccions:
+##  6.2.2. Now we predict:
 pred.anx <- pred(model1 = brt.ber.anx,
                  model2 = brt.gau.anx,
                  spatial1 = spatial.ber.anx, 
@@ -564,13 +673,11 @@ names(pred.anx) <- names(pred.sar) <- names(pred.sardinella) <- paste0("Year:", 
 names(pred.ber.anx) <- names(pred.ber.sar) <- names(pred.ber.sardinella) <- paste0("Year:", 1998:2019)
 
 
-#############################################
-# 7. RETALLAR MAPES PER GSA06 i ZEPA DELTA # 
-#############################################
 
-zepa <-  readShapePoly("C:/Users/Usuario/Desktop/ICM/FEINA/Fran Ramírez/SteLar - Delta (Cory's)/MEDITS/gsa/ZEPA_Ebre_WGS84.shp",
-                       proj4string=CRS("+init=epsg:4326"))
 
+############################################
+# 7. CUT MAPS FOR GSA06 and THE DELTA ZEPA # 
+############################################
 
 # ------------------------- anchovy ------------------------- #
 for (i in 1:nlayers(pred.anx)){
@@ -636,19 +743,18 @@ pred.ber.sardinella <- pred.sardinella.ber.gsa
 rm(list=c("i", "pred.anx.gsa", "pred.sar.gsa", "pred.sardinella.gsa",
           "pred.anx.ber.gsa", "pred.sar.ber.gsa", "pred.sardinella.ber.gsa"))
 
-
-# 7.1. Guardem workspace
-save.image(file = "analisiSDM.RData")
-load("C:/Users/Usuario/Desktop/ICM/FEINA/Fran Ramírez/SteLar - Delta (Cory's)/MEDITS/analisiSDM.RData")
+## Save workspace.
+save.image(file = "results.RData")
 
 
 
-####################################################################
-# 8. CONSTRUCCIÓ MAPA DE PREDICCIONS DE BIOMASSA PER ESPÈCIE I ANY # 
-####################################################################
 
-# 8.1. Evolució en els anys. 
-# ==========================
+##################################################################
+# 8. CONSTRUCTION OF BIOMASS PREDICTION MAPS BY SPECIES AND YEAR # 
+##################################################################
+
+# 8.1. Evolution over the years.
+# =============================
 
 # ------------------------- anchovy ------------------------- #
 zmin <- min(values(pred.anx), na.rm = T)
@@ -705,8 +811,8 @@ for(i in 1:nlayers(pred.sardinella)){
 }
 
 
-# 8.2. Predicció mitjana. 
-# =======================
+# 8.2. Mean prediction (and SD).
+# ==============================
 
 # ------------------------- anchovy ------------------------- #
 mean.pred.anx <- mean(pred.anx)
@@ -762,8 +868,8 @@ plot(spain, col='dark grey',add=T)
 plot(france, col='dark grey',add=T)
 
 
-# 8.3. Mapes RAC. 
-# ===============
+# 8.3. Maps of the residual autocovariate (RAC). 
+# =============================================
 par(mfrow=c(1,3))
 plot(spatial.ber.anx, main = "Anchovy")
 plot(spatial.ber.sar, main = "Sardine")
@@ -776,12 +882,13 @@ plot(spatial.gau.sardinella, main = "Alacha")
 
 
 
-#######################################################
-# 9. CONSTRUCCIÓ MAPES D'OCURRÈNCIA PER ESPÈCIE I ANY # 
-#######################################################
 
-# 9.1. Evolució en els anys. 
-# ==========================
+#####################################################################
+# 9. CONSTRUCTION OF OCCURRENCE PREDICTION MAPS BY SPECIES AND YEAR # 
+#####################################################################
+
+# 9.1. Evolution over the years.. 
+# ===============================
 
 # ------------------------- anchovy ------------------------- #
 zmin <- min(values(pred.ber.anx), na.rm = T)
@@ -838,8 +945,8 @@ for(i in 1:nlayers(pred.ber.sardinella)){
 }
 
 
-# 9.2. Predicció mitjana. 
-# =======================
+# 9.2. Mean prediction (and SD). 
+# ==============================
 
 # ------------------------- anchovy ------------------------- #
 mean.pred.ber.anx <- mean(pred.ber.anx)
@@ -896,12 +1003,9 @@ plot(france, col='dark grey',add=T)
 
 
 
-###################################
-# 10. GUARDEM MAPES DE PREDICCIONS # 
-###################################
-
-setwd("C:/Users/Usuario/Desktop/ICM/FEINA/Fran Ramírez/SteLar - Delta (Cory's)/MEDITS")
-load("C:/Users/Usuario/Desktop/ICM/FEINA/Fran Ramírez/SteLar - Delta (Cory's)/MEDITS/analisiSDM.RData")
+#############################
+# 10. SAVING PREDICION MAPS # 
+#############################
 
 # ------------------------- anchovy ------------------------- #
 
@@ -974,9 +1078,11 @@ for(i in 1:nlayers(pred.sardinella)){
 
 
 
-###############################
-# 11. ANÀLISI DE SENSIBILITAT # 
-###############################
+############################
+# 11. SENSITIVITY ANALYSIS # 
+############################
+
+# Here we create density plots of the log(biomass) for each year.
 
 # ------------------------- anchovy ------------------------- #
 df <- as.data.frame(pred.anx)
@@ -989,7 +1095,7 @@ colnames(df) <- c("Biomass", "Year")
 plot_anx_gsa <- ggplot(df, aes(x = log(Biomass), y = Year)) +
   geom_density_ridges(rel_min_height = 0.005, scale=3) + 
   labs(title = "Anchoa", tag="A") +
-  theme_minimal() + labs(y="", x="log-biomasa") + theme(legend.position = "none")
+  theme_minimal() + labs(y="Densidad", x="log-biomasa") + theme(legend.position = "none")
 
 df <- as.data.frame(pred.anx.zepa)
 df <- df[complete.cases(df), ]
@@ -1001,7 +1107,7 @@ colnames(df) <- c("Biomass", "Year")
 plot_anx_zepa <- ggplot(df, aes(x = log(Biomass), y = Year)) +
   geom_density_ridges(rel_min_height = 0.005, scale=3) + 
   labs(title = "Anchoa", tag="A") +
-  theme_minimal() + labs(y="", x="log-biomasa") + theme(legend.position = "none")
+  theme_minimal() + labs(y="Densidad", x="log-biomasa") + theme(legend.position = "none")
 rm(df)
 
 # ------------------------- sardine ------------------------- #
@@ -1066,147 +1172,30 @@ grid.arrange(plot_anx_gsa, plot_sar_gsa, plot_sardinella_gsa, ncol=3)
 grid.arrange(plot_anx_zepa, plot_sar_zepa, plot_sardinella_zepa, ncol=3)
 
 
-## 6.2.3. Guardem workspace
-save.image(file = "analisiSDM.RData")
-load("C:/Users/Usuario/Desktop/ICM/FEINA/Fran Ramírez/SteLar - Delta (Cory's)/MEDITS/analisiSDM.RData")
 
-
-###################################
-# 12. GRÀFICS FUNCTIONAL RESPONSE # 
-###################################
-
-# 12.1. Funció per a conseguir dataframes amb les prediccions + els valors de les ambientals
-functional.response <- function(data, prediction, RAC){
-  
-  year <- raster(xmn = extent(depth2)[1], xmx = extent(depth2)[2], 
-                 ymn = extent(depth2)[3], ymx = extent(depth2)[4], 
-                 nrows = dim(depth2)[1], ncols = dim(depth2)[2]) 
-  results <- list()
-  for(i in 1:length(sal_year)){
-    # 1. Create raster with the year
-    values(year) <- 1997+i
-    
-    # 2. Extract coordinates of the species data. 
-    xy = cbind(data$lon, data$lat)
-    
-    # 3. Extract values of the predictors in those locations. 
-    predictors <- stack(year, sal_year[[i]], tem_year[[i]],
-                        npp_year[[i]], depth2, RAC)
-    names(predictors) <- c("year", "SSS", "SST", "NPP", "Depth", "autocovariate")
-    env <- extract(predictors, xy)
-    
-    # 4. Extract the predictions of those locations.
-    pred_vals <- extract(prediction[[i]], xy)
-    
-    # 5. Combine values as a data frame and save in a list.
-    results[[i]] <- as.data.frame(cbind(env, pred_vals))
-    names(results)[i] <- 1997+i
-    
-    # 6. Convert lists of rasterLayers to rasterStacks to take the mean afterwards
-    if(i==1){
-      sss <- sal_year[[i]]
-      sst <- tem_year[[i]]
-      npp <- npp_year[[i]]
-    } else{
-      sss <- stack(sss, sal_year[[i]])
-      sst <- stack(sst, tem_year[[i]])
-      npp <- stack(npp, npp_year[[i]])
-    }
-  }
-  
-  # 6. Add mean prediction and env variables.
-  xy = cbind(data$lon, data$lat)
-  values(year) <- mean(1998:2019)
-  
-  predictors <- stack(year, mean(sss), mean(sst), mean(npp), depth2, RAC)
-  names(predictors) <- c("year", "SSS", "SST", "NPP", "Depth", "autocovariate")
-  env <- extract(predictors, xy)
-  pred_vals <- extract(prediction[[i]], xy)
-  results[["mean"]] <- as.data.frame(cbind(env, pred_vals))
-  
-  return(results)
-}
-
-## 12.2. OCURRENCE MODELS
-# ------------------------- anchovy ------------------------- #
-ocurrence_anchovy <- functional.response(sample_anchovy, pred.ber.anx, spatial.ber.anx)
-
-p1 <- qplot(ocurrence_anchovy$`mean`$SSS, ocurrence_anchovy$`mean`$pred_vals,
-            geom='smooth', span =1, xlab= "SSS", ylab= "Probabilidad de ocurrencia")
-p2 <- qplot(ocurrence_anchovy$`mean`$SST, ocurrence_anchovy$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "SST", ylab= "Probabilidad de ocurrencia")
-p3 <- qplot(ocurrence_anchovy$`mean`$NPP, ocurrence_anchovy$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "NPP", ylab= "Probabilidad de ocurrencia")
-p4 <- qplot(ocurrence_anchovy$`mean`$Depth, ocurrence_anchovy$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "Profundidad", ylab= "Probabilidad de ocurrencia")
-grid.arrange(p1, p2, p3, p4, ncol=2)
-
-# ------------------------- sardine ------------------------- #
-ocurrence_sar <- functional.response(sample_sardine, pred.ber.sar, spatial.ber.sar)
-
-p1 <- qplot(ocurrence_sar$`mean`$SSS, ocurrence_sar$`mean`$pred_vals,
-            geom='smooth', span =1, xlab= "SSS", ylab= "Probabilidad de ocurrencia")
-p2 <- qplot(ocurrence_sar$`mean`$SST, ocurrence_sar$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "SST", ylab= "Probabilidad de ocurrencia")
-p3 <- qplot(ocurrence_sar$`mean`$NPP, ocurrence_sar$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "NPP", ylab= "Probabilidad de ocurrencia")
-p4 <- qplot(ocurrence_sar$`mean`$Depth, ocurrence_sar$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "Profundidad", ylab= "Probabilidad de ocurrencia")
-grid.arrange(p1, p2, p3, p4, ncol=2)
-
-
-# ------------------------- sardinella ------------------------- #
-ocurrence_sardinella <- functional.response(sample_sardinella, pred.ber.sardinella, spatial.ber.sardinella)
-
-p1 <- qplot(ocurrence_sardinella$`mean`$SSS, ocurrence_sardinella$`mean`$pred_vals,
-            geom='smooth', span =1, xlab= "SSS", ylab= "Probabilidad de ocurrencia")
-p2 <- qplot(ocurrence_sardinella$`mean`$SST, ocurrence_sardinella$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "SST", ylab= "Probabilidad de ocurrencia")
-p3 <- qplot(ocurrence_sardinella$`mean`$NPP, ocurrence_sardinella$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "NPP", ylab= "Probabilidad de ocurrencia")
-p4 <- qplot(ocurrence_sardinella$`mean`$Depth, ocurrence_sardinella$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "Profundidad", ylab= "Probabilidad de ocurrencia")
-grid.arrange(p1, p2, p3, p4, ncol=2)
+## Save workspace.
+save.image(file = "results.RData")
 
 
 
-## 12.3. BIOMASS MODELS
-# ------------------------- anchovy ------------------------- #
-biomass_anchovy <- functional.response(sample_anchovy_bio, pred.anx, spatial.gau.anx)
 
-p1 <- qplot(biomass_anchovy$`mean`$SSS, biomass_anchovy$`mean`$pred_vals,
-            geom='smooth', span =1, xlab= "SSS", ylab= "Biomasa (kg)")
-p2 <- qplot(biomass_anchovy$`mean`$SST, biomass_anchovy$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "SST", ylab= "Biomasa (kg)")
-p3 <- qplot(biomass_anchovy$`mean`$NPP, biomass_anchovy$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "NPP", ylab= "Biomasa (kg)")
-p4 <- qplot(biomass_anchovy$`mean`$Depth, biomass_anchovy$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "Profundidad", ylab= "Biomasa (kg)")
-grid.arrange(p1, p2, p3, p4, ncol=2)
+#################################
+# 12. FUNCTIONAL RESPONSE PLOTS # 
+#################################
 
-# ------------------------- sardine ------------------------- #
-biomass_sar <- functional.response(sample_sardine_bio, pred.sar, spatial.gau.sar)
+## OCURRENCE MODELS
+par(mar=c(4,4,1,2))
+gbm.plot(brt.ber.anx,write.title = F, show.contrib = T, smooth=T,
+         y.label = "fitted function",plot.layout=c(2,3))
+gbm.plot(brt.ber.sar,write.title = F, show.contrib = T, smooth=T,
+         y.label = "fitted function",plot.layout=c(2,3))
+gbm.plot(brt.ber.sardinella,write.title = F, show.contrib = T, smooth=T,
+         y.label = "fitted function",plot.layout=c(2,3))
 
-p1 <- qplot(biomass_sar$`mean`$SSS, biomass_sar$`mean`$pred_vals,
-            geom='smooth', span =1, xlab= "SSS", ylab= "Biomasa (kg)")
-p2 <- qplot(biomass_sar$`mean`$SST, biomass_sar$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "SST", ylab= "Biomasa (kg)")
-p3 <- qplot(biomass_sar$`mean`$NPP, biomass_sar$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "NPP", ylab= "Biomasa (kg)")
-p4 <- qplot(biomass_sar$`mean`$Depth, biomass_sar$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "Profundidad", ylab= "Biomasa (kg)")
-grid.arrange(p1, p2, p3, p4, ncol=2)
-
-
-# ------------------------- sardinella ------------------------- #
-biomass_sardinella <- functional.response(sample_sardinella_bio, pred.sardinella, spatial.gau.sardinella)
-
-p1 <- qplot(biomass_sardinella$`mean`$SSS, biomass_sardinella$`mean`$pred_vals,
-            geom='smooth', span =1, xlab= "SSS", ylab= "Biomasa (kg)")
-p2 <- qplot(biomass_sardinella$`mean`$SST, biomass_sardinella$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "SST", ylab= "Biomasa (kg)")
-p3 <- qplot(biomass_sardinella$`mean`$NPP, biomass_sardinella$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "NPP", ylab= "Biomasa (kg)")
-p4 <- qplot(biomass_sardinella$`mean`$Depth, biomass_sardinella$`mean`$pred_vals, 
-            geom='smooth', span =1, xlab= "Profundidad", ylab= "Biomasa (kg)")
-grid.arrange(p1, p2, p3, p4, ncol=2)
+## BIOMASS MODELS
+gbm.plot(brt.gau.anx,write.title = F, show.contrib = T, smooth=T,
+         y.label = "fitted function",plot.layout=c(2,3))
+gbm.plot(brt.gau.sar,write.title = F, show.contrib = T, smooth=T,
+         y.label = "fitted function",plot.layout=c(2,3))
+gbm.plot(brt.gau.sardinella,write.title = F, show.contrib = T, smooth=T,
+         y.label = "fitted function",plot.layout=c(2,3))
