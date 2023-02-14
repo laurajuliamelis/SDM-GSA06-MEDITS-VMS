@@ -1,4 +1,4 @@
-# SDM-GSA06-MEDITS-VMS
+# SDM-GSA06-MEDITS-VMS: Código y datos del Proyecto SteLar-DELTA
 
 ## Información general 
 Este repositorio contiene el *script* de R y los resultados del análisis espacial llevado a cabo en el marco del contrato de apoyo tecnológico firmado entre la Agencia Estatal Consejo Superior de Investigaciones Científicas (CSIC) y CORY's - Investigación y Conservación de la Biodiversidad.
@@ -11,19 +11,19 @@ Para hacer estas estimas combinamos dos bases de datos independientes (procedent
 
 En el repositorio se incluye tanto el código utilizado para llevar a cabo el análisis como los resultados obtenidos.
 
-- [**Figuras.**](Figuras)
+### [**Figuras.**](Figuras)
 
 La carpeta contiene las figuras incluidas en el informe del proyecto: área de estudio, mapas de las variables ambientales, tendencias temporales y funciones de densidad de probabilidad de la biomasa de las tres especies, mapas de probabilidad de ocurrencia predicha para cada especie (anual -media de junio y julio- y media de los años 1998 a 2019) y mapas de biomasa predicha para cada especie (anual -media de junio y julio- y media de los años 1998 a 2019).
 
-- [**Predicciones.**](Predicciones)
+### [**Predicciones.**](Predicciones)
 
 Contiene las predicciones en formato .fit de probabilidad de ocurrencia y de biomasa para cada especie (anchoa, sardina y alacha) para los años 1998 a 2019 (media de junio y julio), así como la media de todos los años y su desviación estándar.
 
-- [**R.**](R)
+### [**R.**](R)
 
 Script de R
 
-- [**Shapefiles GSA-ZEPA.**](Shapefiles%20GSA-ZEPA)
+### [**Shapefiles GSA-ZEPA.**](Shapefiles%20GSA-ZEPA)
 
 Archivos en formato simple con las áreas (i.e. polígonos) de la sub-área geográfica (GSA) 06 y la Zona de Especial Protección para las Aves del Delta del Ebro (ZEPA ES0000512).
 
