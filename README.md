@@ -1,3 +1,5 @@
+![map](https://raw.githubusercontent.com/laurajuliamelis/SDM-GSA06-MEDITS-VMS/master/Figuras/Mapa_GSA06_ZEPA.jpg)
+
 # SDM-GSA06-MEDITS-VMS: Código y datos del Proyecto SteLar-DELTA
 
 ## Información general 
