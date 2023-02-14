@@ -1199,3 +1199,52 @@ gbm.plot(brt.gau.sar,write.title = F, show.contrib = T, smooth=T,
          y.label = "fitted function",plot.layout=c(2,3))
 gbm.plot(brt.gau.sardinella,write.title = F, show.contrib = T, smooth=T,
          y.label = "fitted function",plot.layout=c(2,3))
+
+#################################
+# 13. FUNCTIONAL RESPONSE GRIDS # 
+#################################
+## OCURRENCE MODELS
+# ------------------------- anchovy ------------------------- #
+FR_ber_anx_year <- plot.gbm(brt.ber.anx, i.var= 1,return.grid = TRUE)
+FR_ber_anx_sss <- plot.gbm(brt.ber.anx, i.var= 2,return.grid = TRUE)
+FR_ber_anx_sst <- plot.gbm(brt.ber.anx, i.var= 3,return.grid = TRUE)
+FR_ber_anx_npp <- plot.gbm(brt.ber.anx, i.var= 4,return.grid = TRUE)
+FR_ber_anx_depth <- plot.gbm(brt.ber.anx, i.var= 5,return.grid = TRUE)
+
+# ------------------------- sardine------------------------- #
+FR_ber_sar_year <- plot.gbm(brt.ber.sar, i.var= 1,return.grid = TRUE)
+FR_ber_sar_sss <- plot.gbm(brt.ber.sar, i.var= 2,return.grid = TRUE)
+FR_ber_sar_sst <- plot.gbm(brt.ber.sar, i.var= 3,return.grid = TRUE)
+FR_ber_sar_npp <- plot.gbm(brt.ber.sar, i.var= 4,return.grid = TRUE)
+FR_ber_sar_depth <- plot.gbm(brt.ber.sar, i.var= 5,return.grid = TRUE)
+
+# ------------------------- sardinella ------------------------- #
+FR_ber_sardinella_year <- plot.gbm(brt.ber.sardinella, i.var= 1,return.grid = TRUE)
+FR_ber_sardinella_sss <- plot.gbm(brt.ber.sardinella, i.var= 2,return.grid = TRUE)
+FR_ber_sardinella_sst <- plot.gbm(brt.ber.sardinella, i.var= 3,return.grid = TRUE)
+FR_ber_sardinella_npp <- plot.gbm(brt.ber.sardinella, i.var= 4,return.grid = TRUE)
+FR_ber_sardinella_depth <- plot.gbm(brt.ber.sardinella, i.var= 5,return.grid = TRUE)
+
+
+## BIOMASS MODELS
+# ------------------------- anchovy ------------------------- #
+FR_gau_anx_year <- plot.gbm(brt.gau.anx, i.var= 1,return.grid = TRUE)
+FR_gau_anx_sss <- plot.gbm(brt.gau.anx, i.var= 2,return.grid = TRUE)
+FR_gau_anx_sst <- plot.gbm(brt.gau.anx, i.var= 3,return.grid = TRUE)
+FR_gau_anx_npp <- plot.gbm(brt.gau.anx, i.var= 4,return.grid = TRUE)
+FR_gau_anx_depth <- plot.gbm(brt.gau.anx, i.var= 5,return.grid = TRUE)
+
+# ------------------------- sardine------------------------- #
+FR_gau_sar_year <- plot.gbm(brt.gau.sar, i.var= 1,return.grid = TRUE)
+FR_gau_sar_sss <- plot.gbm(brt.gau.sar, i.var= 2,return.grid = TRUE)
+FR_gau_sar_sst <- plot.gbm(brt.gau.sar, i.var= 3,return.grid = TRUE)
+FR_gau_sar_npp <- plot.gbm(brt.gau.sar, i.var= 4,return.grid = TRUE)
+FR_gau_sar_depth <- plot.gbm(brt.gau.sar, i.var= 5,return.grid = TRUE)
+
+# ------------------------- sardinella ------------------------- #
+FR_gau_sardinella_year <- plot.gbm(brt.gau.sardinella, i.var= 1,return.grid = TRUE)
+FR_gau_sardinella_sss <- plot.gbm(brt.gau.sardinella, i.var= 2,return.grid = TRUE)
+FR_gau_sardinella_sst <- plot.gbm(brt.gau.sardinella, i.var= 3,return.grid = TRUE)
+FR_gau_sardinella_npp <- plot.gbm(brt.gau.sardinella, i.var= 4,return.grid = TRUE)
+FR_gau_sardinella_depth <- plot.gbm(brt.gau.sardinella, i.var= 5,return.grid = TRUE)
+
