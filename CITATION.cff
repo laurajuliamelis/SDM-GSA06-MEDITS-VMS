@@ -11,7 +11,7 @@ message: >-
 type: software
 authors:
   - given-names: Laura
-    family-names: Julià Melis
+    family-names: Julià
     email: lauraj@icm.csic.es
     affiliation: Institut de Ciències del Mar (ICM-CSIC)
     orcid: 'https://orcid.org/0000-0001-5161-2267'
