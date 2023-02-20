@@ -19,7 +19,7 @@ La carpeta contiene las figuras incluidas en el informe del proyecto: área de e
 
 ### [**Predicciones.**](Predicciones)
 
-Contiene las predicciones en formato .tif de probabilidad de ocurrencia y de biomasa para cada especie (anchoa, sardina y alacha) para los años 1998 a 2019 (media de junio y julio), así como la media de todos los años y su desviación estándar.
+Contiene las predicciones de probabilidad de ocurrencia y de biomasa para cada especie (anchoa, sardina y alacha) para los años 1998 a 2019 (media de junio y julio), así como la media de todos los años y su desviación estándar.
 
 ### [**R.**](R)
 
