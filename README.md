@@ -3,7 +3,7 @@
 # SDM-GSA06-MEDITS-VMS: Código y datos del Proyecto SteLar-DELTA
 
 ## Información general 
-Este repositorio contiene el *script* de R y los resultados del análisis espacial llevado a cabo en el marco del contrato de apoyo tecnológico firmado entre la Agencia Estatal Consejo Superior de Investigaciones Científicas (CSIC) y CORY's - Investigación y Conservación de la Biodiversidad. EL informe de resultados puede enontrarse [aquí](https://digital.csic.es/handle/10261/295428).
+Este repositorio contiene el *script* de R y los resultados del análisis espacial llevado a cabo en el marco del contrato de apoyo tecnológico firmado entre la Agencia Estatal Consejo Superior de Investigaciones Científicas (CSIC) y CORY's - Investigación y Conservación de la Biodiversidad. El informe de resultados puede enontrarse [aquí](https://digital.csic.es/handle/10261/295428).
 
 Se ha evaluado la distribución espacial en términos de biomasa y probabilidad de ocurrencia de las tres principales especies de pequeños peces pelágicos (anchoa, sardina y alacha) en la plataforma continental ibérica dentro de la sub-área geográfica (GSA) 06, y particularmente dentro de la Zona de Especial Protección para las Aves (ZEPA) ES0000512.
 
